@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #fff;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background-color: #333;
+    }
+
+    .search-container {
+      margin-top: 20px;
+    }
+
+    .search-container input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .search-container select {
+      padding: 10px;
+      margin-left: 10px;
+      border-radius: 5px;
+    }
+
+    .search-container button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background-color: #1DB954;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .results {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 800px;
+      background-color: #1E1E1E;
+      border-radius: 10px;
+    }
+
+    .results h2 {
+      margin-bottom: 15px;
+    }
+
+    .artist-info img {
+      width: 150px;
+      height: 150px;
+      border-radius: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      margin: 10px 0;
+    }
+
+    a {
+      color: #1DB954;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Music Search</h1>
+    <div class="search-container">
+      <form action="/search" method="GET">
+        <input type="text" name="query" placeholder="Search for an artist, track, or album..." required>
+        <select name="type">
+          <option value="artist" selected>Artist</option>
+          <option value="track">Track</option>
+          <option value="album">Album</option>
+        </select>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    <div class="results">
+      {% if results.type == 'artist' %}
+        <div class="artist-info">
+          <h2>Artist: <a href="{{ results.url }}" target="_blank">{{ results.name }}</a></h2>
+          {% if results.image %}
+            <img src="{{ results.image }}" alt="{{ results.name }}">
+          {% endif %}
+        </div>
+
+        <h3>Top 10 Tracks</h3>
+        <ul>
+          {% for track in results.top_tracks %}
+            <li><a href="{{ track.url }}" target="_blank">{{ track.name }}</a></li>
+          {% endfor %}
+        </ul>
+      {% elif results.type == 'track' %}
+        <h3>Tracks</h3>
+        <ul>
+          {% for track in results.tracks %}
+            <li>
+              <strong>{{ track.name }}</strong> by {{ track.artist }}
+              (<a href="{{ track.url }}" target="_blank">Listen</a>)
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif results.type == 'album' %}
+        <h3>Albums</h3>
+        <ul>
+          {% for album in results.albums %}
+            <li>
+              <strong>{{ album.name }}</strong> (Released: {{ album.release_date }})
+              (<a href="{{ album.url }}" target="_blank">View Album</a>)
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif results.type == 'error' %}
+        <p style="color: red;">{{ results.message }}</p>
+      {% endif %}
+    </div>
+  </main>
+</body>
+</html>

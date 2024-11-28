@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shark Music Search</title>
+  <style>
+    /* Basic styling for the page */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #121212; /* Spotify's dark theme background */
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #333; /* Dark background for header */
+      padding: 20px;
+      text-align: center;
+    }
+
+    .search-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .search-container input[type="text"] {
+      padding: 10px 15px;
+      width: 50%; /* Wide input field */
+      max-width: 400px;
+      background-color: #2A2A2A; /* Dark gray input field */
+      border: none;
+      border-radius: 20px; /* Rounded corners */
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .search-container input[type="text"]::placeholder {
+      color: #b3b3b3; /* Light gray placeholder text */
+    }
+
+    .search-container button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      background-color: #1DB954; /* Spotify green */
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .search-container button:hover {
+      background-color: #17a846; /* Slightly darker green */
+    }
+
+    .content {
+      display: flex;
+      flex-grow: 1;
+      height: 100%;
+    }
+
+    .left-area {
+      width: 20%;
+      background-color: #1E1E1E; /* Slightly lighter background for contrast */
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    footer {
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header section -->
+  <header>
+    <div class="search-container">
+      <form action="/search" method="GET">
+        <input type="text" name="query" id="searchInput" placeholder="Search for songs, artists, or albums..." required>
+        <select name="type">
+          <option value="artist" selected>Artist</option>
+          <option value="track">Track</option>
+          <option value="album">Album</option>
+        </select>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Content section -->
+  <div class="content">
+    <!-- Left area for suggestions or favorites -->
+    <div class="left-area">
+      <h2>Suggestions</h2>
+      <ul>
+        <li>Discover Weekly</li>
+        <li>Top Hits 2024</li>
+        <li>Chill Vibes</li>
+        <li>Focus Playlist</li>
+        <li>Retro Rewind</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer section -->
+  <footer>
+    <p>&copy; 2024 Shark Music Search</p>
+  </footer>
+
+</body>
+</html>

@@ -2,7 +2,7 @@ import os
 import random
 
 from dotenv import load_dotenv
-from flask import Flask, session, url_for, request, redirect
+from flask import Flask, session, url_for, request, redirect, render_template
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.cache_handler import FlaskSessionCacheHandler
@@ -15,7 +15,7 @@ load_dotenv()
 client_id = os.getenv("SPOTIPY_CLIENT_ID")
 client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
-scope = 'playlist-read-private'
+scope = 'playlist-read-private user-read-private user-read-email user-library-read'
 
 cache_handler = FlaskSessionCacheHandler(session)
 
@@ -34,12 +34,12 @@ def home():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
-    return redirect(url_for('get_playlists'))
+    return render_template('home.html')
 
 @app.route('/callback')
 def callback():
     sp_oauth.get_access_token(request.args['code'])
-    return redirect(url_for('get_playlists'))
+    return redirect('/')
 
 #Will test this block of code when rendered html templates
 @app.route('/search', methods=['GET', 'POST'])
@@ -49,70 +49,120 @@ def search():
         return redirect(auth_url)
     
     results = None
+
+    if request.method == 'GET':
+        query = request.args.get('query', '')
+        search_type = request.args.get('type', 'artist')
+
+
     if request.method == 'POST':
         query = request.form.get('query', '')
         search_type = request.form.get('type', 'artist')
     
-        if query:
-            spotify_results = sp.search(q=query, type=search_type, limit=10)
-        
-            # Handle artist search
-            if search_type == 'artist':
-                if spotify_results['artists']['items']:
-                    artist = spotify_results['artists']['items']
-                    artist_id = artist['id']
-                    artist_name = artist['name']
-                    artist_url = artist['external_urls']['spotify']
-                    artist_image = artist['images'][0]['url'] if artist['images'] else None
-                    top_tracks = sp.artist_top_tracks(artist_id)['tracks']
-                    results = {
-                        'name': artist_name,
-                        'url': artist_url,
-                        'image': artist_image,
-                        'top_tracks': [
-                            {'name': track['name'], 'url': track['external_urls']['spotify']}
-                            for track in top_tracks
-                        ]
-                    }
-                else:
-                    results = {'type': 'error', 'message': 'No artist found.'}
-
-            elif search_type == 'track':
-                    tracks = spotify_results['tracks']['items']
-                    if tracks:  # Check if track results exist
-                        results = {
-                            'type': 'track',
-                            'tracks': [
-                                {
-                                    'name': f"{track['name']} by {', '.join(artist['name'] for artist in track['artists'])}",
-                                    'url': track['external_urls']['spotify']
-                                }
-                                for track in tracks
-                            ]
-                        }
-                    else:
-                        results = {'type': 'error', 'message': 'No tracks found.'}
-
-            elif search_type == 'album':
-                albums = spotify_results['albums']['items']
-                if albums:  # Check if album results exist
-                    results = {
-                        'type': 'album',
-                        'albums': [
-                            {
-                                'name': album['name'],
-                                'url': album['external_urls']['spotify'],
-                                'release_date': album['release_date']
-                            }
-                            for album in albums
-                        ]
-                    }
-                else:
-                    results = {'type': 'error', 'message': 'No albums found.'}
+    if query:
+        spotify_results = sp.search(q=query, type=search_type, limit=10)
     
-    # Render the search results page with the results
-    #return render_template('search.html', results=results)
+        # Handle artist search
+        if search_type == 'artist':
+            if spotify_results['artists']['items']:
+                artist = spotify_results['artists']['items'][0]
+                artist_id = artist['id']
+                artist_name = artist['name']
+                artist_url = artist['external_urls']['spotify']
+                artist_image = artist['images'][0]['url'] if artist['images'] else None
+                top_tracks = sp.artist_top_tracks(artist_id)['tracks']
+                results = {
+                    'type': 'artist',
+                    'name': artist_name,
+                    'url': artist_url,
+                    'image': artist_image,
+                    'top_tracks': [
+                        {'name': track['name'], 'url': track['external_urls']['spotify']}
+                        for track in top_tracks
+                    ]
+                }
+            else:
+                results = {'type': 'error', 'message': 'No artist found.'}
 
+        elif search_type == 'track':
+                tracks = spotify_results['tracks']['items']
+                if tracks:  # Check if track results exist
+                    results = {
+                        'type': 'track',
+                        'tracks': [
+                            {
+                                'name': f"{track['name']} by {', '.join(artist['name'] for artist in track['artists'])}",
+                                'url': track['external_urls']['spotify']
+                            }
+                            for track in tracks
+                        ]
+                    }
+                else:
+                    results = {'type': 'error', 'message': 'No tracks found.'}
+
+        elif search_type == 'album':
+            albums = spotify_results['albums']['items']
+            if albums:  # Check if album results exist
+                results = {
+                    'type': 'album',
+                    'albums': [
+                        {
+                            'name': album['name'],
+                            'url': album['external_urls']['spotify'],
+                            'release_date': album['release_date']
+                        }
+                        for album in albums
+                    ]
+                }
+            else:
+                results = {'type': 'error', 'message': 'No albums found.'}
+    #For debugging purpose
+    print("Results:", results)
+
+    # Render the search results page with the results
+    return render_template('search.html', results=results)
+
+@app.route('/top-charts', methods=['GET'])
+def top_charts():
+    # Ensure the user is authenticated
+    if not sp_oauth.validate_token(cache_handler.get_cached_token()):
+        auth_url = sp_oauth.get_authorize_url()
+        return redirect(auth_url)
+
+    # Get the country code from the query parameter or default to "GLOBAL"
+    country = request.args.get('country', 'GLOBAL').upper()
+
+    try:
+        # Retrieve the "Top 50" playlists for the specified country
+        category_id = "charts"
+        country_filter = "" if country == "GLOBAL" else f"_{country}"
+        playlists = sp.category_playlists(category_id=category_id, country=None if country == "GLOBAL" else country, limit=10)
+
+        # Find the specific "Top 50" playlist for the given country
+        playlist_id = None
+        for playlist in playlists['playlists']['items']:
+            if f"Top 50{country_filter}" in playlist['name']:
+                playlist_id = playlist['id']
+                break
+
+        if not playlist_id:
+            return render_template('top_charts.html', error=f"No top charts found for {country}.", country=country)
+
+        # Fetch playlist tracks
+        playlist_tracks = sp.playlist_tracks(playlist_id, limit=50)
+        tracks = [
+            {
+                'name': item['track']['name'],
+                'artist': ', '.join(artist['name'] for artist in item['track']['artists']),
+                'url': item['track']['external_urls']['spotify']
+            }
+            for item in playlist_tracks['items']
+        ]
+    except Exception as e:
+        return render_template('top_charts.html', error=f"An error occurred: {str(e)}", country=country)
+
+    # Render the top charts page with the tracks
+    #return render_template('top_charts.html', country=country, tracks=tracks)
 
 @app.route('/get_playlists')
 def get_playlists():
