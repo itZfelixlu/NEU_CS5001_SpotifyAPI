@@ -9,136 +9,310 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #121212;
+      background-color: #121212; /* Spotify's dark theme background */
       color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Back to homepage button */
+    .back-to-home {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    .back-to-home img {
+      width: 40px;
+      height: 40px;
     }
 
     header {
-      padding: 20px;
-      text-align: center;
       background-color: #333;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
     }
 
     .search-container {
-      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      background-color: #2c2c2c;
+      border-radius: 50px;
+      padding: 5px 10px;
+      width: 80%;
+      max-width: 800px;
+    }
+
+    .search-container form {
+      display: flex;
+      align-items: center;
     }
 
     .search-container input[type="text"] {
-      padding: 10px;
-      width: 300px;
+      flex: 1;
       border: none;
-      border-radius: 5px;
+      background: #2c2c2c;
+      color: #fff;
+      font-size: 16px;
+      padding: 10px 15px;
+      outline: none;
+      border-radius: 30px;
     }
 
-    .search-container select {
-      padding: 10px;
+    .dropdown {
       margin-left: 10px;
-      border-radius: 5px;
+      border: none;
+      background-color: #333;
+      color: #fff;
+      border-radius: 20px;
+      padding: 8px 12px;
+      font-size: 16px;
     }
 
-    .search-container button {
-      padding: 10px 20px;
-      margin-left: 10px;
+    .search-button {
       background-color: #1DB954;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 20px;
+      padding: 8px 20px;
+      margin-left: 10px;
       cursor: pointer;
+      font-size: 16px;
     }
 
-    .results {
-      margin: 20px auto;
+    .search-button:hover {
+      background-color: #17a846;
+    }
+
+    /* Content section with Flexbox layout */
+    .content {
+      display: flex;
+      justify-content: space-between; /* Distribute space between left and right */
       padding: 20px;
-      max-width: 800px;
-      background-color: #1E1E1E;
-      border-radius: 10px;
     }
 
-    .results h2 {
+    /* Left side (Artist Info) */
+    .left-side {
+      width: 30%; /* Adjust as needed */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      background-color: #1E1E1E;
+      padding: 20px;
+      border-radius: 15px; /* Rounded corners for the artist info section */
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6); /* Optional: add a slight shadow for depth */
+    }
+
+    .left-side img {
+      width: 250px; /* Larger image */
+      height: 250px; /* Larger image */
+      border-radius: 15px; /* Rounded corners */
       margin-bottom: 15px;
     }
 
-    .artist-info img {
-      width: 150px;
-      height: 150px;
+    .left-side h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+
+    /* Right side (Top Tracks and Albums) */
+    .right-side {
+      width: 65%; /* Adjust as needed */
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Section for Top Tracks */
+    .top-tracks, .albums {
+      background-color: #1E1E1E;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6); /* Optional: add a slight shadow for depth */
+      margin-bottom: 20px;
+    }
+
+    .top-tracks h3, .albums h3 {
+      margin-bottom: 15px;
+    }
+
+    /* Track and Album Lists */
+    .track-list,
+    .album-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .track-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .track-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 5px;
+      margin-right: 15px;
+    }
+
+    .track-name {
+      color: #1DB954;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .track-name:hover {
+      text-decoration: underline;
+    }
+
+    /* Albums Section */
+    .album-list {
+      display: flex;
+      overflow-x: auto;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .album-list::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .album-list::-webkit-scrollbar-track {
+      background: grey;
       border-radius: 10px;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
+    .album-list::-webkit-scrollbar-thumb {
+      background: #1DB954;
+      border-radius: 10px;
     }
 
-    ul li {
-      margin: 10px 0;
+    .album-list::-webkit-scrollbar-thumb:hover {
+      background: #555;
     }
 
-    a {
-      color: #1DB954;
+    .album {
+      flex: 0 0 auto;
+      text-align: center;
+      width: 150px;
+    }
+
+    .album img {
+      width: 150px;
+      height: 150px;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .album a {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #fff;
       text-decoration: none;
     }
 
-    a:hover {
+    .album a:hover {
       text-decoration: underline;
+    }
+
+    footer {
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+      width: 100%;
+      margin-top: auto;
     }
   </style>
 </head>
 <body>
+
+  <!-- Back to homepage button with PNG icon -->
+  <a href="/" class="back-to-home">
+    <img src="{{url_for('static', filename='images/MusicVibes.png')}}" alt="Back to Homepage">
+  </a>
+
+  <!-- Header section -->
   <header>
-    <h1>Music Search</h1>
     <div class="search-container">
-      <form action="/search" method="GET">
-        <input type="text" name="query" placeholder="Search for an artist, track, or album..." required>
-        <select name="type">
+      <form action="/search" method="GET" style="display: flex; width: 100%;">
+        <input type="text" name="query" id="searchInput" placeholder="What do you want to play?" required>
+        <select name="type" class="dropdown">
           <option value="artist" selected>Artist</option>
           <option value="track">Track</option>
           <option value="album">Album</option>
         </select>
-        <button type="submit">Search</button>
+        <button type="submit" class="search-button">Search</button>
       </form>
     </div>
   </header>
 
   <main>
-    <div class="results">
-      {% if results.type == 'artist' %}
-        <div class="artist-info">
+    <div class="content">
+      <!-- Left side: Artist info -->
+      <div class="left-side">
+        {% if results.type == 'artist' %}
+          <img src="{{ results.image }}" alt="{{ results.name }}">
           <h2>Artist: <a href="{{ results.url }}" target="_blank">{{ results.name }}</a></h2>
-          {% if results.image %}
-            <img src="{{ results.image }}" alt="{{ results.name }}">
-          {% endif %}
-        </div>
+        {% endif %}
+      </div>
 
-        <h3>Top 10 Tracks</h3>
-        <ul>
-          {% for track in results.top_tracks %}
-            <li><a href="{{ track.url }}" target="_blank">{{ track.name }}</a></li>
-          {% endfor %}
-        </ul>
-      {% elif results.type == 'track' %}
-        <h3>Tracks</h3>
-        <ul>
-          {% for track in results.tracks %}
-            <li>
-              <strong>{{ track.name }}</strong> by {{ track.artist }}
-              (<a href="{{ track.url }}" target="_blank">Listen</a>)
-            </li>
-          {% endfor %}
-        </ul>
-      {% elif results.type == 'album' %}
-        <h3>Albums</h3>
-        <ul>
-          {% for album in results.albums %}
-            <li>
-              <strong>{{ album.name }}</strong> (Released: {{ album.release_date }})
-              (<a href="{{ album.url }}" target="_blank">View Album</a>)
-            </li>
-          {% endfor %}
-        </ul>
-      {% elif results.type == 'error' %}
-        <p style="color: red;">{{ results.message }}</p>
-      {% endif %}
+      <!-- Right side: Top Tracks and Albums -->
+      <div class="right-side">
+        {% if results.type == 'artist' %}
+          <!-- Top Tracks Section -->
+          <div class="top-tracks">
+            <h3>Top 10 Tracks</h3>
+            <ul class="track-list">
+              {% for track in results.top_tracks %}
+                <li class="track-item">
+                  {% if track.image %}
+                    <img src="{{ track.image }}" alt="{{ track.name }}" class="track-image">
+                  {% endif %}
+                  <a href="{{ track.url }}" target="_blank" class="track-name">{{ track.name }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Albums Section -->
+          <div class="albums">
+            <h3>Albums</h3>
+            <ul class="album-list">
+              {% for album in results.albums %}
+                <li class="album-item">
+                  <div class="album">
+                    {% if album.image %}
+                      <img src="{{ album.image }}" alt="{{ album.name }}">
+                    {% endif %}
+                    <a href="{{ album.url }}" target="_blank" class="album-name">{{ album.name }}</a>
+                    <p>{{ album.release_date }}</p>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </main>
+
+  <!-- Footer section -->
+  <footer>
+    <p>&copy; 2024 MusicVibes</p>
+  </footer>
+
 </body>
 </html>

@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shark Music Search</title>
+  <title>MusicVibes Search</title>
   <style>
-    /* Basic styling for the page */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -14,109 +13,211 @@
       color: #fff;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
+    }
+
+    /* Add styles for the back-to-home icon */
+    .back-to-home {
+      position: absolute; /* Positioned inside the header */
+      top: 20px; /* Adjust the top space */
+      left: 20px; /* Adjust the left space */
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 1000; /* Ensure the icon is always on top */
+    }
+
+    .back-to-home img {
+      width: 40px; /* Adjust the size of the icon */
+      height: 40px;
     }
 
     header {
-      background-color: #333; /* Dark background for header */
+      background-color: #333;
       padding: 20px;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative; /* Position the icon relative to the header */
     }
 
     .search-container {
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin-top: 10px;
+      background-color: #2c2c2c;
+      border-radius: 50px;
+      padding: 5px 10px;
+      width: 80%;
+      max-width: 800px;
+    }
+
+    .search-container form {
+      display: flex;
+      align-items: center;
     }
 
     .search-container input[type="text"] {
-      padding: 10px 15px;
-      width: 50%; /* Wide input field */
-      max-width: 400px;
-      background-color: #2A2A2A; /* Dark gray input field */
+      flex: 1;
       border: none;
-      border-radius: 20px; /* Rounded corners */
+      background: #2c2c2c;
       color: #fff;
       font-size: 16px;
+      padding: 10px 15px;
       outline: none;
+      border-radius: 30px;
     }
 
     .search-container input[type="text"]::placeholder {
-      color: #b3b3b3; /* Light gray placeholder text */
+      color: #b3b3b3;
     }
 
-    .search-container button {
+    .dropdown {
       margin-left: 10px;
-      padding: 10px 20px;
-      background-color: #1DB954; /* Spotify green */
+      border: none;
+      background-color: #333;
+      color: #fff;
+      border-radius: 20px;
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+
+    .search-button {
+      background-color: #1DB954;
       color: white;
       border: none;
       border-radius: 20px;
+      padding: 8px 20px;
+      margin-left: 10px;
       cursor: pointer;
       font-size: 16px;
     }
 
-    .search-container button:hover {
-      background-color: #17a846; /* Slightly darker green */
+    .search-button:hover {
+      background-color: #17a846;
     }
 
     .content {
       display: flex;
-      flex-grow: 1;
-      height: 100%;
+      flex: 1;
+      padding-top: 20px; /* Add space between header and content */
+      padding-bottom: 20px; /* Add space between content and footer */
     }
 
     .left-area {
-      width: 20%;
-      background-color: #1E1E1E; /* Slightly lighter background for contrast */
-      padding: 20px;
+      width: 15%;
+      background-color: #1E1E1E;
+      padding: 10px;
       overflow-y: auto;
+      border-radius: 15px; /* Rounded corners for the playlist area */
+      margin: 0 20px; /* Add horizontal gap between left area and the rest */
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6); /* Optional: add a slight shadow for depth */
+    }
+
+    .left-area ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .left-area ul li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .left-area ul li img {
+      width: 40px; /* Increased image size */
+      height: 40px;
+      border-radius: 10px; /* Slightly rounded corners */
+      margin-right: 10px;
+    }
+
+    .left-area ul li a {
+      font-size: 16px; /* Increased text size */
+      color: #1DB954;
+      text-decoration: none;
+    }
+
+    .left-area ul li a:hover {
+      text-decoration: underline;
+    }
+
+    .liked-song {
+      font-weight: bold; /* Emphasize the "Liked Songs" playlist */
+      color: #fff;
+    }
+
+    .liked-song img {
+      border: 2px solid #1DB954; /* Highlight the "Liked Songs" image */
     }
 
     footer {
       background-color: #333;
       color: #fff;
-      text-align: center;
+      text-align: center; /* Ensures the footer content is centered */
       padding: 10px 0;
+      width: 100%;
+      margin-top: auto;
     }
   </style>
 </head>
 <body>
 
+  <!-- Back to homepage button with PNG icon -->
+  <a href="/" class="back-to-home">
+    <img src="{{url_for('static', filename='images/MusicVibes.png')}}" alt="Back to Homepage">
+  </a>
+
   <!-- Header section -->
   <header>
     <div class="search-container">
-      <form action="/search" method="GET">
-        <input type="text" name="query" id="searchInput" placeholder="Search for songs, artists, or albums..." required>
-        <select name="type">
+      <form action="/search" method="GET" style="display: flex; width: 100%;">
+        <input type="text" name="query" id="searchInput" placeholder="What do you want to play?" required>
+        <select name="type" class="dropdown">
           <option value="artist" selected>Artist</option>
           <option value="track">Track</option>
           <option value="album">Album</option>
         </select>
-        <button type="submit">Search</button>
+        <button type="submit" class="search-button">Search</button>
       </form>
     </div>
   </header>
 
   <!-- Content section -->
   <div class="content">
-    <!-- Left area for suggestions or favorites -->
+    <!-- Left area for playlists -->
     <div class="left-area">
-      <h2>Suggestions</h2>
+      <h2>Your Playlists</h2>
       <ul>
-        <li>Discover Weekly</li>
-        <li>Top Hits 2024</li>
-        <li>Chill Vibes</li>
-        <li>Focus Playlist</li>
-        <li>Retro Rewind</li>
+        {% if playlists %}
+          <!-- Ensure "Liked Songs" is displayed at the top -->
+          {% for playlist in playlists %}
+            {% if playlist.name == "Liked Songs" %}
+              <li class="liked-song">
+                <img src="{{ playlist.image }}" alt="{{ playlist.name }}"/>
+                <a href="{{ playlist.url }}" target="_blank">{{ playlist.name }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          <!-- Render other playlists -->
+          {% for playlist in playlists %}
+            {% if playlist.name != "Liked Songs" %}
+              <li>
+                <img src="{{ playlist.image }}" alt="{{ playlist.name }}"/>
+                <a href="{{ playlist.url }}" target="_blank">{{ playlist.name }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <li>No playlists available.</li>
+        {% endif %}
       </ul>
     </div>
   </div>
 
   <!-- Footer section -->
   <footer>
-    <p>&copy; 2024 Shark Music Search</p>
+    <p>&copy; 2024 MusicVibes</p>
   </footer>
 
 </body>

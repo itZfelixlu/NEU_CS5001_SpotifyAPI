@@ -34,7 +34,7 @@ def home():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
-    return render_template('home.html')
+    return redirect(url_for('get_playlists'))
 
 @app.route('/callback')
 def callback():
@@ -71,15 +71,31 @@ def search():
                 artist_url = artist['external_urls']['spotify']
                 artist_image = artist['images'][0]['url'] if artist['images'] else None
                 top_tracks = sp.artist_top_tracks(artist_id)['tracks']
+                albums_response = sp.artist_albums(artist_id, album_type='album',limit=10)
+                albums = [
+                    {
+                        'name': album['name'],
+                        'url': album['external_urls']['spotify'],
+                        'release_date': album['release_date'],
+                        'image': album['images'][0]['url'] if album['images'] else None
+                    }
+                    for album in albums_response['items']
+                ]
+
                 results = {
                     'type': 'artist',
                     'name': artist_name,
                     'url': artist_url,
                     'image': artist_image,
                     'top_tracks': [
-                        {'name': track['name'], 'url': track['external_urls']['spotify']}
+                        {
+                            'name': track['name'], 'url': track['external_urls']['spotify'],
+                            'url': track['external_urls']['spotify'],
+                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None
+                        }
                         for track in top_tracks
-                    ]
+                    ],
+                    'albums':albums
                 }
             else:
                 results = {'type': 'error', 'message': 'No artist found.'}
@@ -117,7 +133,7 @@ def search():
             else:
                 results = {'type': 'error', 'message': 'No albums found.'}
     #For debugging purpose
-    print("Results:", results)
+    #print("Results:", results)
 
     # Render the search results page with the results
     return render_template('search.html', results=results)
@@ -169,12 +185,47 @@ def get_playlists():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
-    
-    playlists = sp.current_user_playlists()
-    playlists_info = [(pl['name'], pl['external_urls']['spotify']) for pl in playlists['items']]
-    playlists_html = '<br>'.join([f'{name}: {url}' for name, url in playlists_info])
 
-    return playlists_html
+    playlists = sp.current_user_playlists()
+    #for debug purpose
+    #print(playlists)
+    playlists_info = []
+
+    for playlist in playlists['items']:
+        playlist_id = playlist['id']
+        playlist_name = playlist['name']
+        playlist_url = playlist['external_urls']['spotify']
+
+        # Fetch the first track's album image
+        tracks = sp.playlist_tracks(playlist_id, limit=1)
+        if tracks['items']:
+            first_track_image = tracks['items'][0]['track']['album']['images'][0]['url'] \
+                if tracks['items'][0]['track']['album']['images'] else None
+        else:
+            first_track_image = None
+
+        playlists_info.append({
+            'name': playlist_name,
+            'url': playlist_url,
+            'image': first_track_image
+        })
+    
+    try:
+        liked_songs = sp.current_user_saved_tracks(limit=1)
+        if liked_songs['items']:
+            liked_songs_image = url_for('static', filename='images/liked-songs.png')
+            playlists_info.append({
+                'name': "Liked Songs",
+                'url': "https://open.spotify.com/collection/tracks",  # Link to the Liked Songs page
+                'image': liked_songs_image
+            })
+    except Exception as e:
+        print("Error fetching liked songs:", e)
+
+    #for debug purpose
+    #print(playlists_info)
+
+    return render_template('home.html', playlists=playlists_info)
 
 @app.route('/logout')
 def logout():
