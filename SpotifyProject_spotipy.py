@@ -50,10 +50,10 @@ def search():
     
     results = None
 
+    # Get the search query and type from the request
     if request.method == 'GET':
         query = request.args.get('query', '')
         search_type = request.args.get('type', 'artist')
-
 
     if request.method == 'POST':
         query = request.form.get('query', '')
@@ -71,7 +71,7 @@ def search():
                 artist_url = artist['external_urls']['spotify']
                 artist_image = artist['images'][0]['url'] if artist['images'] else None
                 top_tracks = sp.artist_top_tracks(artist_id)['tracks']
-                albums_response = sp.artist_albums(artist_id, album_type='album',limit=10)
+                albums_response = sp.artist_albums(artist_id, album_type='album', limit=10)
                 albums = [
                     {
                         'name': album['name'],
@@ -89,33 +89,37 @@ def search():
                     'image': artist_image,
                     'top_tracks': [
                         {
-                            'name': track['name'], 'url': track['external_urls']['spotify'],
+                            'name': track['name'],
                             'url': track['external_urls']['spotify'],
                             'image': track['album']['images'][0]['url'] if track['album']['images'] else None
                         }
                         for track in top_tracks
                     ],
-                    'albums':albums
+                    'albums': albums
                 }
             else:
                 results = {'type': 'error', 'message': 'No artist found.'}
 
+        # Handle track search
         elif search_type == 'track':
-                tracks = spotify_results['tracks']['items']
-                if tracks:  # Check if track results exist
-                    results = {
-                        'type': 'track',
-                        'tracks': [
-                            {
-                                'name': f"{track['name']} by {', '.join(artist['name'] for artist in track['artists'])}",
-                                'url': track['external_urls']['spotify']
-                            }
-                            for track in tracks
-                        ]
-                    }
-                else:
-                    results = {'type': 'error', 'message': 'No tracks found.'}
+            tracks = spotify_results['tracks']['items']
+            if tracks:  # Check if track results exist
+                results = {
+                    'type': 'track',
+                    'tracks': [
+                        {
+                            'name': track['name'],
+                            'artist': ', '.join(artist['name'] for artist in track['artists']),
+                            'url': track['external_urls']['spotify'],
+                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None
+                        }
+                        for track in tracks
+                    ]
+                }
+            else:
+                results = {'type': 'error', 'message': 'No tracks found.'}
 
+        # Handle album search
         elif search_type == 'album':
             albums = spotify_results['albums']['items']
             if albums:  # Check if album results exist
@@ -124,19 +128,89 @@ def search():
                     'albums': [
                         {
                             'name': album['name'],
+                            'artist': ', '.join(artist['name'] for artist in album['artists']),
                             'url': album['external_urls']['spotify'],
-                            'release_date': album['release_date']
+                            'release_date': album['release_date'],
+                            'image': album['images'][0]['url'] if album['images'] else None
                         }
                         for album in albums
                     ]
                 }
             else:
                 results = {'type': 'error', 'message': 'No albums found.'}
-    #For debugging purpose
-    #print("Results:", results)
 
     # Render the search results page with the results
     return render_template('search.html', results=results)
+
+@app.route('/recommend', methods=['GET'])
+def recommend():
+    # Check if the token is valid
+    if not sp_oauth.validate_token(cache_handler.get_cached_token()):
+        auth_url = sp_oauth.get_authorize_url()
+        return redirect(auth_url)
+
+    recommendations = None
+
+    try:
+        # Fetch user's top tracks and artists
+        top_tracks = sp.current_user_top_tracks(limit=5, time_range='medium_term')['items']
+        top_artists = sp.current_user_top_artists(limit=5, time_range='medium_term')['items']
+
+        print("Top Tracks:", top_tracks)
+        print("Top Artists:", top_artists)
+
+        # Extract seeds (track IDs, artist IDs)
+        seed_tracks = [track['id'] for track in top_tracks]
+        seed_artists = [artist['id'] for artist in top_artists]
+
+        # Debugging: Print top tracks and artists
+        print("Top Tracks:", [track['name'] for track in top_tracks])
+        print("Top Artists:", [artist['name'] for artist in top_artists])
+
+        # Fetch audio features for top tracks
+        audio_features = sp.audio_features(seed_tracks)
+
+        # Calculate average song attributes
+        avg_tempo = sum(f['tempo'] for f in audio_features if f) / len(audio_features)
+        avg_energy = sum(f['energy'] for f in audio_features if f) / len(audio_features)
+        avg_valence = sum(f['valence'] for f in audio_features if f) / len(audio_features)
+
+        # Debugging: Print calculated averages
+        print("Average Tempo:", avg_tempo)
+        print("Average Energy:", avg_energy)
+        print("Average Valence (Mood):", avg_valence)
+
+        # Use calculated attributes to define recommendation parameters
+        recommendation_results = sp.recommendations(
+            seed_tracks=seed_tracks[:2],  # Use up to 2 track seeds
+            seed_artists=seed_artists[:2],  # Use up to 2 artist seeds
+            limit=10,
+            min_tempo=max(avg_tempo - 10, 0),  # Adjust tempo range
+            max_tempo=min(avg_tempo + 10, 300),
+            min_energy=max(avg_energy - 0.2, 0),  # Adjust energy range
+            max_energy=min(avg_energy + 0.2, 1),
+            min_valence=max(avg_valence - 0.2, 0),  # Adjust mood range
+            max_valence=min(avg_valence + 0.2, 1)
+        )
+
+        # Format the recommendations for rendering
+        recommendations = [
+            {
+                'name': track['name'],
+                'artist': ', '.join(artist['name'] for artist in track['artists']),
+                'url': track['external_urls']['spotify']
+            }
+            for track in recommendation_results['tracks']
+        ]
+
+        # Debugging: Print formatted recommendations
+        print("Formatted Recommendations:", recommendations)
+
+    except Exception as e:
+        return render_template('home.html', error=f"An error occurred: {str(e)}")
+
+    return render_template('home.html', recommendations=recommendations)
+
 
 @app.route('/top-charts', methods=['GET'])
 def top_charts():

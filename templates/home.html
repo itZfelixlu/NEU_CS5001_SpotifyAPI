@@ -5,40 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MusicVibes Search</title>
   <style>
+
+    * {
+      box-sizing: border-box;
+    }
+    
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #121212; /* Spotify's dark theme background */
+      background-color: #121212;
       color: #fff;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
-    /* Add styles for the back-to-home icon */
-    .back-to-home {
-      position: absolute; /* Positioned inside the header */
-      top: 20px; /* Adjust the top space */
-      left: 20px; /* Adjust the left space */
-      background-color: transparent;
-      border: none;
-      cursor: pointer;
-      z-index: 1000; /* Ensure the icon is always on top */
-    }
-
-    .back-to-home img {
-      width: 40px; /* Adjust the size of the icon */
-      height: 40px;
-    }
-
+    /* Header and Search Container */
     header {
       background-color: #333;
       padding: 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative; /* Position the icon relative to the header */
+      position: relative;
+      width: 100%;
+    }
+
+    /* Back to home icon inside the header */
+    .back-to-home {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 1000;
+      position: absolute; /* Fix it inside the header */
+      top: 20px;
+      left: 20px;
+    }
+
+    .back-to-home img {
+      width: 40px;
+      height: 40px;
     }
 
     .search-container {
@@ -54,6 +61,7 @@
     .search-container form {
       display: flex;
       align-items: center;
+      width: 100%;
     }
 
     .search-container input[type="text"] {
@@ -65,10 +73,6 @@
       padding: 10px 15px;
       outline: none;
       border-radius: 30px;
-    }
-
-    .search-container input[type="text"]::placeholder {
-      color: #b3b3b3;
     }
 
     .dropdown {
@@ -96,21 +100,27 @@
       background-color: #17a846;
     }
 
+    /* Content Section: Flex layout */
     .content {
       display: flex;
       flex: 1;
-      padding-top: 20px; /* Add space between header and content */
-      padding-bottom: 20px; /* Add space between content and footer */
+      padding: 20px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      width: 100%;
+      overflow-x: hidden; /*To prevent horizontal overflow*/
     }
 
+    /* Left area for playlists (15% of the page width) */
     .left-area {
       width: 15%;
+      height: calc(100vh - 120px); /* Ensures the left area takes up the full height, accounting for header and footer */
       background-color: #1E1E1E;
       padding: 10px;
       overflow-y: auto;
-      border-radius: 15px; /* Rounded corners for the playlist area */
-      margin: 0 20px; /* Add horizontal gap between left area and the rest */
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6); /* Optional: add a slight shadow for depth */
+      border-radius: 15px;
+      margin-right: 20px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
     }
 
     .left-area ul {
@@ -125,14 +135,14 @@
     }
 
     .left-area ul li img {
-      width: 40px; /* Increased image size */
+      width: 40px;
       height: 40px;
-      border-radius: 10px; /* Slightly rounded corners */
+      border-radius: 10px;
       margin-right: 10px;
     }
 
     .left-area ul li a {
-      font-size: 16px; /* Increased text size */
+      font-size: 16px;
       color: #1DB954;
       text-decoration: none;
     }
@@ -142,18 +152,46 @@
     }
 
     .liked-song {
-      font-weight: bold; /* Emphasize the "Liked Songs" playlist */
+      font-weight: bold;
       color: #fff;
     }
 
     .liked-song img {
-      border: 2px solid #1DB954; /* Highlight the "Liked Songs" image */
+      border: 2px solid #1DB954;
+    }
+
+    /* Recommendations Section (on the right side) */
+    .recommendations-section {
+      width: 80%;
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .recommendations-section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .recommendation-item {
+      margin-bottom: 15px;
+    }
+
+    .recommendation-item a {
+      color: #1DB954;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .recommendation-item a:hover {
+      text-decoration: underline;
     }
 
     footer {
       background-color: #333;
       color: #fff;
-      text-align: center; /* Ensures the footer content is centered */
+      text-align: center;
       padding: 10px 0;
       width: 100%;
       margin-top: auto;
@@ -164,7 +202,7 @@
 
   <!-- Back to homepage button with PNG icon -->
   <a href="/" class="back-to-home">
-    <img src="{{url_for('static', filename='images/MusicVibes.png')}}" alt="Back to Homepage">
+    <img src="{{ url_for('static', filename='images/MusicVibes.png') }}" alt="Back to Homepage">
   </a>
 
   <!-- Header section -->
@@ -182,14 +220,13 @@
     </div>
   </header>
 
-  <!-- Content section -->
+  <!-- Content section (Left side: Playlists, Right side: Recommendations) -->
   <div class="content">
     <!-- Left area for playlists -->
     <div class="left-area">
       <h2>Your Playlists</h2>
       <ul>
         {% if playlists %}
-          <!-- Ensure "Liked Songs" is displayed at the top -->
           {% for playlist in playlists %}
             {% if playlist.name == "Liked Songs" %}
               <li class="liked-song">
@@ -199,7 +236,6 @@
             {% endif %}
           {% endfor %}
 
-          <!-- Render other playlists -->
           {% for playlist in playlists %}
             {% if playlist.name != "Liked Songs" %}
               <li>
@@ -212,6 +248,22 @@
           <li>No playlists available.</li>
         {% endif %}
       </ul>
+    </div>
+
+    <!-- Recommendations Section -->
+    <div class="recommendations-section">
+      <h2>Recommended Tracks</h2>
+      {% if recommendations %}
+        <ul>
+          {% for recommendation in recommendations %}
+            <li class="recommendation-item">
+              <a href="{{ recommendation.url }}" target="_blank">{{ recommendation.name }} - {{ recommendation.artist }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif recommendations is not none %}
+        <p>No recommendations found.</p>
+      {% endif %}
     </div>
   </div>
 
