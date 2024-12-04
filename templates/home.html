@@ -160,31 +160,64 @@
       border: 2px solid #1DB954;
     }
 
-    /* Recommendations Section (on the right side) */
-    .recommendations-section {
-      width: 80%;
+    .right-area {
+      width: 80%; /* Matches the remaining width next to the playlists */
+      display: flex;
+      flex-direction: column; /* Stack Recommendations and Top Charts vertically */
+      gap: 20px; /* Add space between Recommendations and Top Charts */
+    }
+
+/* Recommendations Section */
+    .recommendations-section, 
+    .top-charts-section {
+      flex: 1; /* Ensures equal height for both sections */
       background-color: #1e1e1e;
       padding: 20px;
       border-radius: 15px;
       box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    .recommendations-section h2 {
+    .recommendations-section h2, 
+    .top-charts-section h2 {
       text-align: center;
       margin-bottom: 20px;
     }
 
-    .recommendation-item {
-      margin-bottom: 15px;
+    /* Item List Styling */
+    .recommendations-section ul,
+    .top-charts-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
 
-    .recommendation-item a {
+    .recommendation-item, 
+    .chart-item {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+
+    .recommendation-item img, 
+    .chart-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      margin-right: 10px;
+    }
+
+    .recommendation-item a, 
+    .chart-item a {
       color: #1DB954;
       text-decoration: none;
       font-size: 16px;
     }
 
-    .recommendation-item a:hover {
+    .recommendation-item a:hover, 
+    .chart-item a:hover {
       text-decoration: underline;
     }
 
@@ -250,20 +283,46 @@
       </ul>
     </div>
 
-    <!-- Recommendations Section -->
-    <div class="recommendations-section">
-      <h2>Recommended Tracks</h2>
-      {% if recommendations %}
-        <ul>
-          {% for recommendation in recommendations %}
-            <li class="recommendation-item">
-              <a href="{{ recommendation.url }}" target="_blank">{{ recommendation.name }} - {{ recommendation.artist }}</a>
-            </li>
-          {% endfor %}
-        </ul>
-      {% elif recommendations is not none %}
-        <p>No recommendations found.</p>
-      {% endif %}
+    <div class="right-area">
+      <!-- Recommendations Section -->
+      <div class="recommendations-section">
+        <h2>Recommended Tracks</h2>
+        {% if recommendations %}
+          <ul>
+            {% for recommendation in recommendations %}
+              <li class="recommendation-item">
+                <div style="display: flex; align-items: center;">
+                  <img src="{{ recommendation.image }}" alt="{{ recommendation.name }}" style="width: 50px; height: 50px; border-radius: 10px; margin-right: 10px;">
+                  <a href="{{ recommendation.url }}" target="_blank">{{ recommendation.name }} - {{ recommendation.artist }}</a>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No recommendations available. Please listen to more tracks to get recommendations!</p>
+        {% endif %}
+      </div>
+
+      <!-- Top-charts Section -->
+      <div class="top-charts-section">
+        <h2>Top Charts by Region</h2>
+        {% for region, data in topcharts_by_region.items() %}
+        <div class="region-section">
+            <h3>Top 50 - {{ region }}</h3>
+            {% if data.error %}
+                <p>{{ data.error }}</p>
+            {% else %}
+                <ul>
+                    {% for track in data.tracks %}
+                    <li>
+                        <img src="{{ track.image }}" alt="{{ track.name }}" style="width: 50px; height: 50px;">
+                        <a href="{{ track.url }}" target="_blank">{{ track.name }}</a> - {{ track.artist }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
   </div>
 

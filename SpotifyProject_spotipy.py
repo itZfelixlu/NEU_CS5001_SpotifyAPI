@@ -15,7 +15,7 @@ load_dotenv()
 client_id = os.getenv("SPOTIPY_CLIENT_ID")
 client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
-scope = 'playlist-read-private user-read-private user-read-email user-library-read'
+scope = 'playlist-read-private user-read-private user-read-email user-library-read user-top-read playlist-read-collaborative user-read-recently-played'
 
 cache_handler = FlaskSessionCacheHandler(session)
 
@@ -29,16 +29,40 @@ sp_oauth = SpotifyOAuth(
 )
 sp = Spotify(auth_manager=sp_oauth)
 
+# Playlist_id for top-50
+region_playlists = {
+    "GLOBAL": "37i9dQZEVXbMDoHDwVN2tF",
+    "US": "37i9dQZEVXbLRQDuF5jeBp",
+    "UK": "37i9dQZEVXbLnolsZ8PSNw",
+    "CA": "37i9dQZEVXbKj23U1GF4IR",
+    "DE": "37i9dQZEVXbJiZcmkrIHGU",
+    "JP": "37i9dQZEVXbKXQ4mDTEBXq",
+    "IN": "37i9dQZEVXbLZ52XmnySJg",
+    "BR": "37i9dQZEVXbMXbN3EUUhlg",
+}
+
 @app.route('/')
 def home():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
-    return redirect(url_for('get_playlists'))
+    
+    playlists = get_playlists()
+    recommendations = recommend()
+    regions = ['GLOBAL','US','UK','CA','JP']
+    topcharts_by_region = get_top_50_data(regions)
+
+    return render_template('home.html', playlists=playlists, recommendations=recommendations, topcharts_by_region=topcharts_by_region)
 
 @app.route('/callback')
 def callback():
     sp_oauth.get_access_token(request.args['code'])
+
+    token_info = sp_oauth.get_cached_token()
+    if not token_info:
+        return "Error: Failed to retrieve access token.", 400
+
+    print("Token Info Cached Successfully:", token_info)  # Debugging
     return redirect('/')
 
 #Will test this block of code when rendered html templates
@@ -153,8 +177,8 @@ def recommend():
 
     try:
         # Fetch user's top tracks and artists
-        top_tracks = sp.current_user_top_tracks(limit=5, time_range='medium_term')['items']
-        top_artists = sp.current_user_top_artists(limit=5, time_range='medium_term')['items']
+        top_tracks = sp.current_user_top_tracks(limit=5, time_range='short_term')['items']
+        top_artists = sp.current_user_top_artists(limit=5, time_range='short_term')['items']
 
         print("Top Tracks:", top_tracks)
         print("Top Artists:", top_artists)
@@ -198,7 +222,8 @@ def recommend():
             {
                 'name': track['name'],
                 'artist': ', '.join(artist['name'] for artist in track['artists']),
-                'url': track['external_urls']['spotify']
+                'url': track['external_urls']['spotify'],
+                'image': track['album']['images'][0]['url'] if track['album']['images'] else None
             }
             for track in recommendation_results['tracks']
         ]
@@ -207,52 +232,50 @@ def recommend():
         print("Formatted Recommendations:", recommendations)
 
     except Exception as e:
-        return render_template('home.html', error=f"An error occurred: {str(e)}")
+        print("Error fetching recommendations: ", e)
+        #return render_template('home.html', error=f"An error occurred: {str(e)}")
 
-    return render_template('home.html', recommendations=recommendations)
+    return recommendations
+    #return render_template('home.html', recommendations=recommendations)
 
 
-@app.route('/top-charts', methods=['GET'])
-def top_charts():
+@app.route('/top-50', methods=['GET'])
+def get_top_50_data(regions=['GLOBAL', 'US', 'UK']):
     # Ensure the user is authenticated
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
 
-    # Get the country code from the query parameter or default to "GLOBAL"
-    country = request.args.get('country', 'GLOBAL').upper()
-
+    topcharts_by_region = {}
     try:
-        # Retrieve the "Top 50" playlists for the specified country
-        category_id = "charts"
-        country_filter = "" if country == "GLOBAL" else f"_{country}"
-        playlists = sp.category_playlists(category_id=category_id, country=None if country == "GLOBAL" else country, limit=10)
+        for region in regions:
+            playlist_id = region_playlists.get(region.upper())
+            if not playlist_id:
+                topcharts_by_region[region] = {'error': f"Region '{region}' not supported."}
+                continue
 
-        # Find the specific "Top 50" playlist for the given country
-        playlist_id = None
-        for playlist in playlists['playlists']['items']:
-            if f"Top 50{country_filter}" in playlist['name']:
-                playlist_id = playlist['id']
-                break
-
-        if not playlist_id:
-            return render_template('top_charts.html', error=f"No top charts found for {country}.", country=country)
-
-        # Fetch playlist tracks
-        playlist_tracks = sp.playlist_tracks(playlist_id, limit=50)
-        tracks = [
-            {
-                'name': item['track']['name'],
-                'artist': ', '.join(artist['name'] for artist in item['track']['artists']),
-                'url': item['track']['external_urls']['spotify']
-            }
-            for item in playlist_tracks['items']
-        ]
+            # Fetch tracks for the region
+            playlist_tracks = sp.playlist_tracks(playlist_id, limit=50)
+            tracks = [
+                {
+                    'name': item['track']['name'],
+                    'artist': ', '.join(artist['name'] for artist in item['track']['artists']),
+                    'url': item['track']['external_urls']['spotify'],
+                    'image': item['track']['album']['images'][0]['url'] if item['track']['album']['images'] else None
+                }
+                for item in playlist_tracks['items']
+            ]
+            topcharts_by_region[region] = {'tracks': tracks}
     except Exception as e:
-        return render_template('top_charts.html', error=f"An error occurred: {str(e)}", country=country)
+        print(f"Error fetching Top 50 data: {e}")
+        # Handle a global error gracefully
+        for region in regions:
+            if region not in topcharts_by_region:
+                topcharts_by_region[region] = {'error': f"Error fetching Top 50 data for region '{region}': {e}"}
 
-    # Render the top charts page with the tracks
-    #return render_template('top_charts.html', country=country, tracks=tracks)
+    return topcharts_by_region
+
+    
 
 @app.route('/get_playlists')
 def get_playlists():
@@ -299,7 +322,8 @@ def get_playlists():
     #for debug purpose
     #print(playlists_info)
 
-    return render_template('home.html', playlists=playlists_info)
+    return playlists_info
+    #return render_template('home.html', playlists=playlists_info)
 
 @app.route('/logout')
 def logout():
@@ -308,4 +332,5 @@ def logout():
 
 
 if __name__ == '__main__':
+
     app.run(debug=True)
