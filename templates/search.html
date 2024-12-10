@@ -357,6 +357,29 @@
       font-size: 14px;
     }
 
+    /* Icon Styles */
+    .heart-icon,
+    .plus-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #1DB954;
+      font-size: 18px;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .heart-icon:hover,
+    .plus-icon:hover {
+      transform: scale(1.1);
+      color: #17a846;
+    }
+
+    .heart-icon:active,
+    .plus-icon:active {
+      transform: scale(1);
+      color: #0f7a34;
+    }
+
     footer {
       background-color: #333;
       color: #fff;
@@ -398,7 +421,6 @@
         <h2>Artist: <a href="{{ results.url }}" target="_blank">{{ results.name }}</a></h2>
       </div>
       <div class="right-side">
-        <!-- Top Tracks -->
         <div class="top-tracks">
           <h3>Top 10 Tracks</h3>
           <ul class="artist-track-list">
@@ -407,12 +429,41 @@
               {% if track.image %}
               <img src="{{ track.image }}" alt="{{ track.name }}" class="track-image">
               {% endif %}
-              <a href="{{ track.url }}" target="_blank" class="track-name">{{ track.name }}</a>
+              <div class="track-details" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                <!-- Left: Track Name -->
+                <div>
+                  <a href="{{ track.url }}" target="_blank" class="track-name">{{ track.name }}</a>
+                </div>
+                <!-- Right: Popularity and Duration -->
+                <div class="track-meta" style="text-align: right;">
+                  <p style="margin: 0; font-size: 14px;">Popularity: {{ track.popularity }}</p>
+                  <p style="margin: 0; font-size: 14px;">Duration: {{ track.duration }}</p>
+                </div>
+              </div>
+              <!-- Buttons -->
+              <span style="margin-left: 3ch; display: inline-flex; align-items: center;">
+                <!-- Heart Button (Like Track) -->
+                <form action="/like-track" method="POST" style="display: inline;">
+                  <input type="hidden" name="track_id" value="{{ track.id }}">
+                  <button type="submit" class="heart-icon" aria-label="Love this track">❤️</button>
+                </form>
+        
+                <!-- Plus Button (Add to Playlist) -->
+                <form action="/add-to-playlist" method="POST" style="display: inline; margin-left: 10px;">
+                  <input type="hidden" name="track_id" value="{{ track.id }}">
+                  <select name="playlist_id" style="background-color: #1E1E1E; color: #fff; border: none; border-radius: 5px; padding: 5px;">
+                    {% for playlist in user_playlists %}
+                    <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="plus-icon" aria-label="Add to playlist">➕</button>
+                </form>
+              </span>
             </li>
             {% endfor %}
           </ul>
         </div>
-        <!-- Albums -->
+                <!-- Albums -->
         <div class="albums">
           <h3>Albums</h3>
           <ul class="artist-album-list">
@@ -431,7 +482,7 @@
     </div>
     {% endif %}
 
-      <!-- Track and Album Layout in Flexbox -->
+    <!-- Track and Album Layout in Flexbox -->
     {% if results.type == 'track' or results.type == 'album' %}
     <div class="flex-container">
       {% if results.type == 'track' %}
@@ -443,16 +494,38 @@
             {% if track.image %}
             <img src="{{ track.image }}" alt="{{ track.name }}">
             {% endif %}
-            <div class="track-info">
-              <a href="{{ track.url }}" target="_blank" class="track-name">{{ track.name }}</a>
-              <p>By: {{ track.artist }}</p>
+            <div class="track-info" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+              <!-- Left: Track Name and Artist -->
+              <div>
+                <a href="{{ track.url }}" target="_blank" class="track-name">{{ track.name }}</a>
+                <p>By: {{ track.artist }}</p>
+              </div>
+              <!-- Right: Heart and Plus Buttons -->
+              <div class="track-buttons" style="text-align: right;">
+                <!-- Heart Button -->
+                <form action="/like-track" method="POST" style="display: inline;">
+                  <input type="hidden" name="track_id" value="{{ track.id }}">
+                  <button type="submit" class="heart-icon" aria-label="Love this track">❤️</button>
+                </form>
+
+                <!-- Plus Button -->
+                <form action="/add-to-playlist" method="POST" style="display: inline; margin-left: 10px;">
+                  <input type="hidden" name="track_id" value="{{ track.id }}">
+                  <select name="playlist_id" style="background-color: #1E1E1E; color: #fff; border: none; border-radius: 5px; padding: 5px;">
+                    {% for playlist in user_playlists %}
+                    <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="plus-icon" aria-label="Add to playlist">➕</button>
+                </form>
+              </div>
             </div>
           </li>
           {% endfor %}
         </ul>
       </div>
       {% endif %}
-
+    
       {% if results.type == 'album' %}
       <div class="album-layout">
         <h3>Album Results</h3>
@@ -474,6 +547,8 @@
       {% endif %}
     </div>
     {% endif %}
+    
+   
   </main>
 
   <!-- Footer section -->

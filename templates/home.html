@@ -101,20 +101,23 @@
     }
 
     /* Content Section: Flex layout */
+    /* Content Section */
     .content {
       display: flex;
+      flex-wrap: wrap; /* Allows wrapping on smaller screens */
       flex: 1;
       padding: 20px;
       justify-content: flex-start;
       align-items: flex-start;
+      gap: 20px; /* Adds spacing between left and right sections */
       width: 100%;
-      overflow-x: hidden; /*To prevent horizontal overflow*/
+      overflow-x: hidden; /* Prevents horizontal overflow */
     }
 
-    /* Left area for playlists (15% of the page width) */
+    /* Left Area (Playlists) */
     .left-area {
-      width: 15%;
-      height: calc(100vh - 120px); /* Ensures the left area takes up the full height, accounting for header and footer */
+      width: 15%; /* Fixed width for playlists */
+      height: calc(100vh - 120px); /* Full height accounting for header/footer */
       background-color: #1E1E1E;
       padding: 10px;
       overflow-y: auto;
@@ -160,66 +163,206 @@
       border: 2px solid #1DB954;
     }
 
+    /* Right Area (Recommendations + Form) */
     .right-area {
-      width: 80%; /* Matches the remaining width next to the playlists */
+      flex: 1; /* Takes up remaining space */
       display: flex;
-      flex-direction: column; /* Stack Recommendations and Top Charts vertically */
-      gap: 20px; /* Add space between Recommendations and Top Charts */
+      flex-direction: column; /* Stacks recommendations and form vertically */
+      gap: 20px; /* Space between recommendations and the form */
+      height: 100%; /* Ensures it fits within the viewport */
+      overflow: hidden; /* Prevents unwanted overflow */
     }
 
-/* Recommendations Section */
-    .recommendations-section, 
-    .top-charts-section {
-      flex: 1; /* Ensures equal height for both sections */
-      background-color: #1e1e1e;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
+    /* Recommendations Section */
+    .recommendations-section {
+      flex: 1; /* Takes up available space within right-area */
+      background: #1E1E1E;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      overflow-x: auto; /* Enables horizontal scrolling for recommendations */
+      overflow-y: hidden; /* Prevents vertical overflow */
+    }
+
+    /* Scrollable Recommendations */
+    .recommendation-scroll-container {
+      white-space: nowrap; /* Keeps recommendations in a single row */
+      padding: 10px 0;
+    }
+
+    .recommendation-list {
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .recommendations-section h2, 
-    .top-charts-section h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    /* Item List Styling */
-    .recommendations-section ul,
-    .top-charts-section ul {
+      gap: 15px;
       list-style: none;
       padding: 0;
       margin: 0;
     }
 
-    .recommendation-item, 
-    .chart-item {
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-    }
-
-    .recommendation-item img, 
-    .chart-item img {
-      width: 50px;
-      height: 50px;
+    .recommendation-item {
+      display: inline-block;
+      background: #333;
+      padding: 15px;
       border-radius: 10px;
-      margin-right: 10px;
+      min-width: 200px;
+      max-width: 250px; /* Limits the maximum width of the item */
+      text-align: left; /* Aligns text to the left for better readability */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      color: #fff;
+      white-space: normal; /* Ensures text wraps within the box */
+      overflow: hidden; /* Prevents content from spilling out of the box */
+      text-overflow: ellipsis; /* Adds ellipsis for any overflowing text */
+      word-wrap: break-word; /* Breaks long words to avoid overflow */
     }
 
-    .recommendation-item a, 
-    .chart-item a {
-      color: #1DB954;
-      text-decoration: none;
-      font-size: 16px;
+    .recommendation-item strong {
+      display: block; /* Places the song title on a new line */
+      font-size: 16px; /* Slightly larger font for the title */
+      margin-bottom: 5px; /* Adds spacing below the title */
+      color: #1DB954; /* Spotify green for the title */
     }
 
-    .recommendation-item a:hover, 
-    .chart-item a:hover {
-      text-decoration: underline;
+    .recommendation-item span {
+      display: block; /* Ensures other info is displayed on separate lines */
+      font-size: 14px; /* Smaller font size for details */
+      color: #ccc; /* Lighter color for additional details */
     }
+
+    .recommendation-item:hover {
+      background: #444;
+      transform: scale(1.05);
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Recommendation Form */
+    .recommendations-form {
+      flex-shrink: 0; /* Prevents the form from shrinking */
+      background: #121212;
+      padding: 20px;
+      border-radius: 10px;
+      color: #fff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      width: 100%; /* Makes it span the full width of its container */
+      overflow-y: auto; /* Enables vertical scrolling for large forms */
+    }
+
+    .recommendations-form h2 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .recommendations-form label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .recommendations-form input,
+    .recommendations-form select,
+    .recommendations-form button {
+      width: 100%; /* Makes inputs full width */
+      padding: 10px;
+      margin-bottom: 15px;
+      border: none; /* Removes default borders */
+      border-radius: 5px;
+      background: #333; /* Dark grey background for input fields */
+      color: #fff; /* White text for contrast */
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle inner shadow for depth */
+      font-size: 14px; /* Match website font size */
+    }
+
+    .recommendations-form input::placeholder,
+    .recommendations-form select {
+      color: #aaa; /* Lighter grey for placeholder text */
+    }
+
+    .recommendations-form select option {
+      background: #333; /* Match the dropdown options with the field background */
+      color: #fff;
+    }
+
+    /* Input Field Focus State */
+    .recommendations-form input:focus,
+    .recommendations-form select:focus {
+      outline: none;
+      border: 1px solid #1DB954; /* Spotify green border on focus */
+      box-shadow: 0 0 6px rgba(29, 185, 84, 0.7); /* Glow effect on focus */
+    }
+
+    .recommendations-form button {
+      background: #1DB954;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      font-weight: bold;
+    }
+
+    .recommendations-form button:hover {
+      background: #17a846;
+      box-shadow: 0 4px 6px rgba(23, 168, 70, 0.5);
+    }
+
+    .recommendation-scroll-container {
+      overflow-x: auto; /* Enable horizontal scrolling */
+      display: block; /* Ensure it behaves as a block container */
+      white-space: nowrap; /* Prevent wrapping within the container */
+      padding: 10px 0; /* Adds padding inside the scrollable area */
+    }
+    .recommendation-scroll-container::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .recommendation-scroll-container::-webkit-scrollbar-track {
+      background: grey;
+      border-radius: 10px;
+    }
+
+    .recommendation-scroll-container::-webkit-scrollbar-thumb {
+      background: #1DB954; /* Spotify green */
+      border-radius: 10px;
+    }
+
+    .recommendation-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #555; /* Darker grey on hover */
+    }
+
+    /* Scrollbar Styling for Dropdown Menu */
+    .recommendations-form select::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .recommendations-form select::-webkit-scrollbar-track {
+      background: grey;
+      border-radius: 10px;
+    }
+
+    .recommendations-form select::-webkit-scrollbar-thumb {
+      background: #1DB954; /* Spotify green */
+      border-radius: 10px;
+    }
+
+    .recommendations-form select::-webkit-scrollbar-thumb:hover {
+      background: #555; /* Darker grey on hover */
+    }
+
+    /* General Scrollbar Styling for Input Areas (if scrollable) */
+    .recommendations-form input::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .recommendations-form input::-webkit-scrollbar-track {
+      background: grey;
+      border-radius: 10px;
+    }
+
+    .recommendations-form input::-webkit-scrollbar-thumb {
+      background: #1DB954;
+      border-radius: 10px;
+    }
+
+    .recommendations-form input::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
 
     footer {
       background-color: #333;
@@ -283,48 +426,82 @@
       </ul>
     </div>
 
-    <div class="right-area">
-      <!-- Recommendations Section -->
-      <div class="recommendations-section">
-        <h2>Recommended Tracks</h2>
+    <!-- Right area (Recommendations + Form) -->
+  <div class="right-area">
+    <!-- Recommendations Section -->
+    <div class="recommendations-section">
+      <h2>Recommended Tracks</h2>
+      <div class="recommendation-scroll-container">
         {% if recommendations %}
-          <ul>
+          <ul class="recommendation-list">
             {% for recommendation in recommendations %}
               <li class="recommendation-item">
-                <div style="display: flex; align-items: center;">
-                  <img src="{{ recommendation.image }}" alt="{{ recommendation.name }}" style="width: 50px; height: 50px; border-radius: 10px; margin-right: 10px;">
-                  <a href="{{ recommendation.url }}" target="_blank">{{ recommendation.name }} - {{ recommendation.artist }}</a>
-                </div>
+                <strong>{{ recommendation['Song ID'] }}</strong>  
+                {{ recommendation['Artist'] }} ({{ recommendation['Genre'] }})<br>
+                Tempo: {{ recommendation['Tempo (BPM)'] }} BPM  
+                Danceability: {{ recommendation['Danceability'] }}
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <p>No recommendations available. Please listen to more tracks to get recommendations!</p>
+          <p>No recommendations found.</p>
         {% endif %}
       </div>
+    </div>
 
-      <!-- Top-charts Section -->
-      <div class="top-charts-section">
-        <h2>Top Charts by Region</h2>
-        {% for region, data in topcharts_by_region.items() %}
-        <div class="region-section">
-            <h3>Top 50 - {{ region }}</h3>
-            {% if data.error %}
-                <p>{{ data.error }}</p>
-            {% else %}
-                <ul>
-                    {% for track in data.tracks %}
-                    <li>
-                        <img src="{{ track.image }}" alt="{{ track.name }}" style="width: 50px; height: 50px;">
-                        <a href="{{ track.url }}" target="_blank">{{ track.name }}</a> - {{ track.artist }}
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-        {% endfor %}
+    <!-- Recommendation Form -->
+    <div class="recommendations-form">
+      <h2>Customize Your Recommendations</h2>
+      <form method="POST">
+        <!-- Tempo Input -->
+        <label for="min_tempo">Min Tempo (BPM):</label>
+        <input type="number" name="min_tempo" min="60" max="200" value="60" required>
+
+        <label for="max_tempo">Max Tempo (BPM):</label>
+        <input type="number" name="max_tempo" min="60" max="200" value="180" required>
+
+        <!-- Danceability Input -->
+        <label for="min_danceability">Min Danceability:</label>
+        <input type="number" step="0.1" min="0" max="1" name="min_danceability" value="0.5" required>
+
+        <!-- Genre Dropdown -->
+        <label for="preferred_genres">Preferred Genres:</label>
+        <select name="preferred_genres" multiple>
+          <option value="Pop">Pop</option>
+          <option value="Hip-Hop">Hip-Hop</option>
+          <option value="R&B">R&B</option>
+          <option value="Rock">Rock</option>
+          <option value="Electronic">Electronic</option>
+          <option value="Jazz">Jazz</option>
+        </select>
+
+        <button type="submit">Get Recommendations</button>
+      </form>
     </div>
   </div>
+</div>
+      <!--
+      <div class="top-charts-section">
+        <h2>Top Charts by Region</h2>
+        <div class="top-charts-grid">
+          {% for region, data in top_50_metadata.items() %}
+          <div class="top-chart-item">
+            {% if data.error %}
+            <p>{{ data.error }}</p>
+            {% else %}
+            <a href="{{ data.url or '#' }}" target="_blank" class="top-chart-link">
+              <img 
+                src="{{ data.image or url_for('static', filename='images/default-album.png') }}" 
+                alt="{{ data.name or 'No Name Available' }}" 
+                class="top-chart-image">
+              <p class="top-chart-name">{{ data.name or 'Unknown Playlist' }}</p>
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    -->
 
   <!-- Footer section -->
   <footer>

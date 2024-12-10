@@ -1,11 +1,13 @@
 import os
-import random
+import pandas as pd
+
 
 from dotenv import load_dotenv
 from flask import Flask, session, url_for, request, redirect, render_template
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.cache_handler import FlaskSessionCacheHandler
+
 
 
 app = Flask(__name__)
@@ -15,7 +17,7 @@ load_dotenv()
 client_id = os.getenv("SPOTIPY_CLIENT_ID")
 client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
-scope = 'playlist-read-private user-read-private user-read-email user-library-read user-top-read playlist-read-collaborative user-read-recently-played'
+scope = 'playlist-read-private user-read-private user-read-email user-library-read user-top-read playlist-read-collaborative user-read-recently-played playlist-modify-public playlist-modify-private user-library-modify'
 
 cache_handler = FlaskSessionCacheHandler(session)
 
@@ -29,30 +31,69 @@ sp_oauth = SpotifyOAuth(
 )
 sp = Spotify(auth_manager=sp_oauth)
 
-# Playlist_id for top-50
-region_playlists = {
-    "GLOBAL": "37i9dQZEVXbMDoHDwVN2tF",
-    "US": "37i9dQZEVXbLRQDuF5jeBp",
-    "UK": "37i9dQZEVXbLnolsZ8PSNw",
-    "CA": "37i9dQZEVXbKj23U1GF4IR",
-    "DE": "37i9dQZEVXbJiZcmkrIHGU",
-    "JP": "37i9dQZEVXbKXQ4mDTEBXq",
-    "IN": "37i9dQZEVXbLZ52XmnySJg",
-    "BR": "37i9dQZEVXbMXbN3EUUhlg",
-}
+#Load csv dataset
+file_path = 'data/Songs_Dataset.csv'
 
-@app.route('/')
+if os.path.exists(file_path):
+    song_df = pd.read_csv(file_path)
+    print("Data loaded successfully")
+else:
+    print("Error: CSV file not found.")
+
+#Song duration conversion
+"""
+    Convert duration in milliseconds to a human-readable format (minutes:seconds).
+    :param duration_ms: Duration in milliseconds
+    :return: Formatted string in minutes:seconds
+    """
+def format_duration(duration_ms):
+    if not duration_ms:
+        return "0:00"
+    minutes, seconds = divmod(duration_ms // 1000, 60)
+    return f"{minutes}:{seconds:02d}"
+
+#Home page route
+@app.route('/', methods=['GET', 'POST'])
 def home():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
     
     playlists = get_playlists()
-    recommendations = recommend()
-    regions = ['GLOBAL','US','UK','CA','JP']
-    topcharts_by_region = get_top_50_data(regions)
+    recommendations = []
+    top_50_metadata = {}
+    try:
+        # Handle form submission
+        if request.method == 'POST':
+            # Fetch user's liked songs
+            liked_songs = sp.current_user_saved_tracks(limit=50)['items']
 
-    return render_template('home.html', playlists=playlists, recommendations=recommendations, topcharts_by_region=topcharts_by_region)
+            # Extract artists and genres
+            favorite_artists = list(set(track['track']['artists'][0]['name'] for track in liked_songs))
+            favorite_genres = list(set(track['track']['album']['album_type'] for track in liked_songs))
+
+            # Get form data
+            min_tempo = int(request.form['min_tempo'])
+            max_tempo = int(request.form['max_tempo'])
+            min_danceability = float(request.form['min_danceability'])
+            preferred_genres = request.form.getlist('preferred_genres')
+
+            # Filter songs using CSV features + form data
+            filtered_songs = song_df[
+                (song_df['Tempo (BPM)'].between(min_tempo, max_tempo)) &
+                (song_df['Danceability'] >= min_danceability) &
+                ((song_df['Artist'].isin(favorite_artists)) |
+                 (song_df['Genre'].isin(preferred_genres or favorite_genres)))
+            ]
+
+            # Generate top 10 recommendations
+            recommendations = filtered_songs.head(10).to_dict(orient='records') if not filtered_songs.empty else []
+
+    except Exception as e:
+        print(f"Error generating recommendations: {e}")
+        recommendations = []
+
+    return render_template('home.html', playlists=playlists, recommendations=recommendations, top_50_metadata=top_50_metadata)
 
 @app.route('/callback')
 def callback():
@@ -65,7 +106,7 @@ def callback():
     print("Token Info Cached Successfully:", token_info)  # Debugging
     return redirect('/')
 
-#Will test this block of code when rendered html templates
+#Search page route
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
@@ -73,6 +114,16 @@ def search():
         return redirect(auth_url)
     
     results = None
+    user_playlists =[]
+
+    try:
+        playlists = sp.current_user_playlists()
+        user_playlists = [
+            {'id': playlist['id'], 'name': playlist['name']}
+            for playlist in playlists['items']
+        ]
+    except Exception as e:
+        user_playlists = []
 
     # Get the search query and type from the request
     if request.method == 'GET':
@@ -115,7 +166,10 @@ def search():
                         {
                             'name': track['name'],
                             'url': track['external_urls']['spotify'],
-                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None
+                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None,
+                            'popularity': track['popularity'],  # Number of times listened (popularity)
+                            'duration': format_duration(track['duration_ms']),  # Human-readable duration
+                            'id': track['id']
                         }
                         for track in top_tracks
                     ],
@@ -135,7 +189,8 @@ def search():
                             'name': track['name'],
                             'artist': ', '.join(artist['name'] for artist in track['artists']),
                             'url': track['external_urls']['spotify'],
-                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None
+                            'image': track['album']['images'][0]['url'] if track['album']['images'] else None,
+                            'id': track['id']
                         }
                         for track in tracks
                     ]
@@ -164,118 +219,144 @@ def search():
                 results = {'type': 'error', 'message': 'No albums found.'}
 
     # Render the search results page with the results
-    return render_template('search.html', results=results)
+    return render_template('search.html', results=results, user_playlists=user_playlists)
 
-@app.route('/recommend', methods=['GET'])
+@app.route('/like-track', methods=['POST'])
+def like_track():
+    track_id = request.form.get('track_id')
+    if not track_id:
+        return "Track ID is required", 400
+
+    try:
+        sp.current_user_saved_tracks_add([track_id])  # Add the track to Liked Songs
+        return redirect(request.referrer or '/')  # Redirect back to the search page
+    except Exception as e:
+        return f"Error adding track to Liked Songs: {str(e)}", 500
+
+@app.route('/add-to-playlist', methods=['POST'])
+def add_to_playlist():
+    track_id = request.form.get('track_id')
+    playlist_id = request.form.get('playlist_id')
+
+    if not track_id or not playlist_id:
+        return "Track ID and Playlist ID are required", 400
+
+    try:
+        sp.playlist_add_items(playlist_id, [track_id])  # Add track to the selected playlist
+        return redirect(request.referrer or '/')  # Redirect back to the search page
+    except Exception as e:
+        return f"Error adding track to playlist: {str(e)}", 500
+
+'''
+@app.route('/recommend', methods=['GET', 'POST'])
 def recommend():
     # Check if the token is valid
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
 
-    recommendations = None
-
     try:
-        # Fetch user's top tracks and artists
-        top_tracks = sp.current_user_top_tracks(limit=5, time_range='short_term')['items']
-        top_artists = sp.current_user_top_artists(limit=5, time_range='short_term')['items']
+        # Fetch user's liked songs from Spotify
+        liked_songs = sp.current_user_saved_tracks(limit=50)['items']
 
-        print("Top Tracks:", top_tracks)
-        print("Top Artists:", top_artists)
+        # Extract artists and genres from liked songs
+        favorite_artists = list(set(track['track']['artists'][0]['name'] for track in liked_songs))
+        favorite_genres = list(set(track['track']['album']['album_type'] for track in liked_songs))
 
-        # Extract seeds (track IDs, artist IDs)
-        seed_tracks = [track['id'] for track in top_tracks]
-        seed_artists = [artist['id'] for artist in top_artists]
+        # Get user preferences from form if POST request
+        if request.method == 'POST':
+            min_tempo = int(request.form['min_tempo'])
+            max_tempo = int(request.form['max_tempo'])
+            min_danceability = float(request.form['min_danceability'])
+            preferred_genres = request.form.getlist('preferred_genres')
 
-        # Debugging: Print top tracks and artists
-        print("Top Tracks:", [track['name'] for track in top_tracks])
-        print("Top Artists:", [artist['name'] for artist in top_artists])
+            # Filter songs using CSV features + user input
+            filtered_songs = song_df[
+                (song_df['Tempo (BPM)'].between(min_tempo, max_tempo)) &
+                (song_df['Danceability'] >= min_danceability) &
+                ((song_df['Artist'].isin(favorite_artists)) |
+                 (song_df['Genre'].isin(preferred_genres or favorite_genres)))
+            ]
+        else:
+            # Default filtering based on Spotify data only
+            filtered_songs = song_df[
+                (song_df['Artist'].isin(favorite_artists)) |
+                (song_df['Genre'].isin(favorite_genres))
+            ]
 
-        # Fetch audio features for top tracks
-        audio_features = sp.audio_features(seed_tracks)
+         # If no songs match the filter, return an empty list
+        recommended_songs = filtered_songs.head(10).to_dict(orient='records') if not filtered_songs.empty else []
 
-        # Calculate average song attributes
-        avg_tempo = sum(f['tempo'] for f in audio_features if f) / len(audio_features)
-        avg_energy = sum(f['energy'] for f in audio_features if f) / len(audio_features)
-        avg_valence = sum(f['valence'] for f in audio_features if f) / len(audio_features)
 
-        # Debugging: Print calculated averages
-        print("Average Tempo:", avg_tempo)
-        print("Average Energy:", avg_energy)
-        print("Average Valence (Mood):", avg_valence)
-
-        # Use calculated attributes to define recommendation parameters
-        recommendation_results = sp.recommendations(
-            seed_tracks=seed_tracks[:2],  # Use up to 2 track seeds
-            seed_artists=seed_artists[:2],  # Use up to 2 artist seeds
-            limit=10,
-            min_tempo=max(avg_tempo - 10, 0),  # Adjust tempo range
-            max_tempo=min(avg_tempo + 10, 300),
-            min_energy=max(avg_energy - 0.2, 0),  # Adjust energy range
-            max_energy=min(avg_energy + 0.2, 1),
-            min_valence=max(avg_valence - 0.2, 0),  # Adjust mood range
-            max_valence=min(avg_valence + 0.2, 1)
-        )
-
-        # Format the recommendations for rendering
-        recommendations = [
-            {
-                'name': track['name'],
-                'artist': ', '.join(artist['name'] for artist in track['artists']),
-                'url': track['external_urls']['spotify'],
-                'image': track['album']['images'][0]['url'] if track['album']['images'] else None
-            }
-            for track in recommendation_results['tracks']
-        ]
-
-        # Debugging: Print formatted recommendations
-        print("Formatted Recommendations:", recommendations)
+        return recommended_songs
 
     except Exception as e:
-        print("Error fetching recommendations: ", e)
-        #return render_template('home.html', error=f"An error occurred: {str(e)}")
+        print("Error generating recommendations:", e)
+        return []
+'''
 
-    return recommendations
-    #return render_template('home.html', recommendations=recommendations)
-
-
+'''
 @app.route('/top-50', methods=['GET'])
-def get_top_50_data(regions=['GLOBAL', 'US', 'UK']):
+def get_top_50_data():
+    """
+    Fetch metadata for all regional Top 50 playlists.
+    """
     # Ensure the user is authenticated
     if not sp_oauth.validate_token(cache_handler.get_cached_token()):
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
 
-    topcharts_by_region = {}
-    try:
-        for region in regions:
-            playlist_id = region_playlists.get(region.upper())
-            if not playlist_id:
-                topcharts_by_region[region] = {'error': f"Region '{region}' not supported."}
-                continue
+    region_playlists = {
+    "GLOBAL": "37i9dQZEVXbMDoHDwVN2tF",
+    "US": "37i9dQZEVXbLRQDuF5jeBp",
+    "UK": "37i9dQZEVXbLnolsZ8PSNw",
+    "CA": "37i9dQZEVXbKj23U1GF4IR",
+    "DE": "37i9dQZEVXbJiZcmkrIHGU",
+    "JP": "37i9dQZEVXbKXQ4mDTEBXq",
+    "IN": "37i9dQZEVXbLZ52XmnySJg",
+    "BR": "37i9dQZEVXbMXbN3EUUhlg"
+    }
+    # Initialize dictionary to store playlist metadata by region
+    top_50_metadata = {}
 
-            # Fetch tracks for the region
-            playlist_tracks = sp.playlist_tracks(playlist_id, limit=50)
-            tracks = [
-                {
-                    'name': item['track']['name'],
-                    'artist': ', '.join(artist['name'] for artist in item['track']['artists']),
-                    'url': item['track']['external_urls']['spotify'],
-                    'image': item['track']['album']['images'][0]['url'] if item['track']['album']['images'] else None
+    try:
+        # Iterate through all regions in region_playlists
+        for region, playlist_id in region_playlists.items():
+            try:
+                # Fetch playlist details from Spotify API
+                playlist = sp.playlist(playlist_id)
+
+                # Extract metadata with defensive checks
+                name = playlist.get('name', 'Unknown Playlist')
+                url = playlist['external_urls'].get('spotify') if playlist.get('external_urls') else None
+                image = (
+                    playlist['images'][0]['url']
+                    if playlist.get('images') and len(playlist['images']) > 0
+                    else None
+                )
+
+                # Handle missing URL or image gracefully
+                if not url:
+                    print(f"Warning: Playlist URL is missing for region '{region}'.")
+                if not image:
+                    print(f"Warning: No image found for playlist '{name}' (region: {region}).")
+
+                # Add the playlist metadata to the dictionary
+                top_50_metadata[region] = {
+                    'name': name,
+                    'url': url,
+                    'image': image,
                 }
-                for item in playlist_tracks['items']
-            ]
-            topcharts_by_region[region] = {'tracks': tracks}
+            except Exception as e:
+                print(f"Error fetching playlist for region '{region}': {e}")
+                top_50_metadata[region] = {'error': f"Could not fetch data for region '{region}'."}
+
+        # Return the metadata for all regions
+        return top_50_metadata
     except Exception as e:
         print(f"Error fetching Top 50 data: {e}")
-        # Handle a global error gracefully
-        for region in regions:
-            if region not in topcharts_by_region:
-                topcharts_by_region[region] = {'error': f"Error fetching Top 50 data for region '{region}': {e}"}
-
-    return topcharts_by_region
-
-    
+        return {'error': "An error occurred while fetching Top 50 data."}, 500
+'''
 
 @app.route('/get_playlists')
 def get_playlists():
