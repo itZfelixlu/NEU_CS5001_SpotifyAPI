@@ -451,7 +451,7 @@
                 <!-- Plus Button (Add to Playlist) -->
                 <form action="/add-to-playlist" method="POST" style="display: inline; margin-left: 10px;">
                   <input type="hidden" name="track_id" value="{{ track.id }}">
-                  <select ="playlist_id" style="background-color: #1E1E1E; color: #fff; border: none; border-radius: 5px; padding: 5px;">
+                  <select name="playlist_id" style="background-color: #1E1E1E; color: #fff; border: none; border-radius: 5px; padding: 5px;">
                     {% for playlist in user_playlists %}
                     <option value="{{ playlist.id }}">{{ playlist.name }}</option>
                     {% endfor %}
