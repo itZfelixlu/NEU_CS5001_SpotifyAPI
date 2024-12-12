@@ -358,27 +358,27 @@
     }
 
     /* Icon Styles */
-    .love-button,
-.plus-button {
-  background-color: transparent; /* Transparent background */
-  border: none; /* No border */
-  color: white; /* Default white color */
-  cursor: pointer; /* Pointer cursor for interactivity */
-  font-size: 18px; /* Icon size */
-  transition: color 0.2s ease, transform 0.2s ease; /* Smooth hover and click effects */
-}
+    .heart-icon,
+    .plus-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #1DB954;
+      font-size: 18px;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
 
-.love-button:hover,
-.plus-button:hover {
-  color: #1DB954; /* Spotify green on hover */
-  transform: scale(1.1); /* Slight zoom effect on hover */
-}
+    .heart-icon:hover,
+    .plus-icon:hover {
+      transform: scale(1.1);
+      color: #17a846;
+    }
 
-.love-button:active,
-.plus-button:active {
-  color: #1DB954; /* Spotify green on click */
-  transform: scale(1.2); /* Slightly larger on click */
-}
+    .heart-icon:active,
+    .plus-icon:active {
+      transform: scale(1);
+      color: #0f7a34;
+    }
 
     footer {
       background-color: #333;
