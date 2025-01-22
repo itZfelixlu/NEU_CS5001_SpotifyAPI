@@ -1,6 +1,6 @@
 Project Option2: Personalized Music Recommendation System Using
 Spotify API
-(Difficulty: Easy)
+
 Project Overview:
 Students will create a personalized music recommendation system using the Spotify Web
 API. The system will allow users to search for songs, artists, or albums and get
